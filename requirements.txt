@@ -1,0 +1,15 @@
+torchvision
+h5py
+tqdm
+torch
+pandas
+opencv_python
+json_tricks
+easydict
+numpy
+matplotlib
+scipy
+PyYAML
+scikit_learn
+GitPython
+tensorboardX
