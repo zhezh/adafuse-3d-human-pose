@@ -2,9 +2,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+tv1, tv2, _ = torch.__version__.split('.')
+tv = int(tv1) * 10 + int(tv2) * 1
+if tv >= 13:  # api change since 1.3.0 for grid_sample
+    grid_sample = functools.partial(F.grid_sample, align_corners=True)
+else:
+    grid_sample = F.grid_sample
 
 
 def gen_hm_grid_coords(w, h, dev=None):
@@ -138,8 +147,8 @@ class CamFusionModule(nn.Module):
             grid = coords_flow.view(batch, self.nview*(self.nview-1), self.h*self.w, self.h+self.w, 3) / flow_norm_factor -1.0
             n_channel = heatmaps.shape[1]
             heatmaps_sample = heatmaps.view(batch, self.nview, n_channel, self.h, self.w).permute(0,2,1,3,4).contiguous()
-            # sample_hm = F.grid_sample(heatmaps_sample, grid)
-            sample_hm = F.grid_sample(heatmaps_sample, grid, mode='nearest')
+            # sample_hm = grid_sample(heatmaps_sample, grid)
+            sample_hm = grid_sample(heatmaps_sample, grid, mode='nearest')
             sample_hm_max, max_indice = torch.max(sample_hm, dim=4)
             sample_hm_max = sample_hm_max.view(batch, n_channel, self.nview, self.nview-1, self.h, self.w)
             sample_hm_max = sample_hm_max.permute(0,2,3,1,4,5).contiguous()
